@@ -114,6 +114,11 @@ export const STARTER_PACK = [
     params: { wave_type: W.SINE, p_env_sustain: 0.25, p_env_decay: 0.4, p_base_freq: 0.4, p_freq_ramp: 0.2, p_arp_mod: 0.3, p_arp_speed: 0.5, p_vib_strength: 0.1, p_vib_speed: 0.4 } },
   { id: 'item-eject', label: '彈出', category: 'item', volume: 0.45,
     params: { wave_type: W.SQUARE, p_env_sustain: 0.1, p_env_decay: 0.2, p_base_freq: 0.35, p_freq_ramp: 0.3, p_duty: 0.4 } },
+  // 撿取
+  { id: 'loot-gold', label: '撿到金幣', category: 'item', volume: 0.35,
+    params: { wave_type: W.SQUARE, p_env_sustain: 0.04, p_env_decay: 0.22, p_env_punch: 0.45, p_base_freq: 0.55, p_duty: 0.5, p_arp_mod: 0.45, p_arp_speed: 0.62 } },
+  { id: 'loot-item', label: '撿到道具', category: 'item', volume: 0.4,
+    params: { wave_type: W.SINE, p_env_sustain: 0.08, p_env_decay: 0.3, p_env_punch: 0.2, p_base_freq: 0.42, p_freq_ramp: 0.18, p_arp_mod: 0.25, p_arp_speed: 0.5 } },
   // 單位
   { id: 'unit-faint', label: '倒下', category: 'unit', volume: 0.45,
     params: { wave_type: W.SQUARE, p_env_sustain: 0.3, p_env_decay: 0.4, p_base_freq: 0.5, p_freq_ramp: -0.25, p_freq_dramp: -0.05, p_duty: 0.5, p_vib_strength: 0.1, p_vib_speed: 0.3 } },
