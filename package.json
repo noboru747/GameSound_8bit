@@ -1,0 +1,14 @@
+{
+  "name": "gamesound-8bit",
+  "version": "0.1.0",
+  "description": "8-bit 遊戲音效工作室：瀏覽器介面產生、調整、試聽、檢測，存檔成 wav + sfx.json 給遊戲套用",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "pack": "node generate-pack.mjs"
+  },
+  "dependencies": {
+    "jsfxr": "1.4.1"
+  }
+}

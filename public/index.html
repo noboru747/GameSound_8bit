@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GameSound 8bit</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/style.css" />
+    <!-- jsfxr（UMD）：riffwave 要先載 -->
+    <script src="/lib/riffwave.js"></script>
+    <script src="/lib/sfxr.js"></script>
+  </head>
+  <body>
+    <header>
+      <h1>GameSound 8bit</h1>
+      <div id="target" class="muted"></div>
+    </header>
+
+    <main>
+      <section id="left" class="panel">
+        <h2>遊戲預設</h2>
+        <div id="presets"></div>
+        <h2>隨機產生</h2>
+        <div id="generators" class="btn-grid"></div>
+        <div class="btn-row">
+          <button id="mutate">變異（微調目前）</button>
+        </div>
+      </section>
+
+      <section id="center" class="panel">
+        <div class="toolbar">
+          <button id="play" class="primary">▶ 播放 <kbd>Space</kbd></button>
+          <label><input type="checkbox" id="autoplay" checked /> 調整後自動試聽</label>
+          <button id="normalize">音量正規化</button>
+        </div>
+        <canvas id="wave" width="900" height="140"></canvas>
+        <div id="stats"></div>
+        <div id="warnings"></div>
+        <div id="wavetype" class="radio-row"></div>
+        <div id="sliders"></div>
+      </section>
+
+      <section id="right" class="panel">
+        <h2>存檔到遊戲</h2>
+        <form id="save-form">
+          <label>id（遊戲引用用）<input name="id" required pattern="[a-z0-9]+(-[a-z0-9]+)*" placeholder="cast-line" /></label>
+          <label>名稱<input name="label" placeholder="直線施放" /></label>
+          <label>分類<select name="category"></select></label>
+          <label>播放音量 <span id="vol-out"></span><input name="volume" type="range" min="0" max="1" step="0.05" value="0.5" /></label>
+          <button type="submit" class="primary">💾 存檔</button>
+          <div id="save-msg" class="muted"></div>
+        </form>
+
+        <h2>音效庫 <span id="lib-count" class="muted"></span></h2>
+        <div id="missing"></div>
+        <div id="library"></div>
+      </section>
+    </main>
+    <script type="module" src="/app.mjs"></script>
+  </body>
+</html>
