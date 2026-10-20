@@ -13,11 +13,16 @@
   <body>
     <header>
       <h1>GameSound 8bit</h1>
+      <nav class="tabs">
+        <button data-tab="synth" class="active">8-bit 合成</button>
+        <button data-tab="ai">AI 生成（Stable Audio Open）</button>
+      </nav>
       <div id="target" class="muted"></div>
     </header>
 
     <main>
-      <section id="left" class="panel">
+      <!-- 8-bit 合成 -->
+      <section id="left" class="panel" data-pane="synth">
         <h2>遊戲預設</h2>
         <div id="presets"></div>
         <h2>隨機產生</h2>
@@ -27,7 +32,7 @@
         </div>
       </section>
 
-      <section id="center" class="panel">
+      <section id="center" class="panel" data-pane="synth">
         <div class="toolbar">
           <button id="play" class="primary">▶ 播放 <kbd>Space</kbd></button>
           <label><input type="checkbox" id="autoplay" checked /> 調整後自動試聽</label>
@@ -40,6 +45,48 @@
         <div id="sliders"></div>
       </section>
 
+      <!-- AI 生成 -->
+      <section class="panel" data-pane="ai" hidden>
+        <form id="ai-form" onsubmit="return false">
+          <div id="ai-status" class="muted">檢查 ComfyUI…</div>
+          <h2>描述（英文）</h2>
+          <div id="ai-templates" class="tpl-row"></div>
+          <textarea name="prompt" rows="3" placeholder="short fire whoosh, crackling flames, game sound effect"></textarea>
+          <h2>不要的內容</h2>
+          <textarea name="negative" rows="2"></textarea>
+          <div class="grid2">
+            <label>產生長度（秒）<input name="seconds" type="number" min="1" max="10" step="0.5" value="2" /></label>
+            <label>候選數量<input name="batch" type="number" min="1" max="8" value="4" /></label>
+            <label>步數（多 = 品質好、慢）<input name="steps" type="number" min="10" max="150" value="50" /></label>
+            <label>描述貼合度（CFG）<input name="cfg" type="number" min="1" max="15" step="0.5" value="7" /></label>
+            <label>Seed<input name="seed" type="number" value="0" /></label>
+            <label class="check"><input name="randomSeed" type="checkbox" checked /> 每次隨機 seed</label>
+          </div>
+          <button type="button" id="ai-generate" class="primary" disabled>✨ 產生</button>
+          <div id="ai-error" class="muted"></div>
+
+          <h2>後處理（調整後自動套用）</h2>
+          <div class="grid2">
+            <label>靜音門檻<input name="threshold" type="number" min="0" max="0.2" step="0.005" value="0.02" /></label>
+            <label>最長（ms，0 = 不限）<input name="maxMs" type="number" min="0" max="5000" step="50" value="900" /></label>
+            <label>淡出（ms）<input name="fadeMs" type="number" min="0" max="1000" step="10" value="120" /></label>
+            <label>8-bit 化<select name="crush"></select></label>
+            <label class="check"><input name="normalize" type="checkbox" checked /> 音量正規化</label>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel" data-pane="ai" hidden>
+        <h2>候選</h2>
+        <div id="ai-candidates"></div>
+        <h2>選用的結果（後處理後）</h2>
+        <div class="toolbar"><button id="ai-play" class="primary">▶ 播放 <kbd>Space</kbd></button></div>
+        <canvas id="ai-wave" width="900" height="140"></canvas>
+        <div id="ai-stats" class="stats"></div>
+        <div id="ai-warnings" class="warnings"></div>
+      </section>
+
+      <!-- 共用：存檔與音效庫 -->
       <section id="right" class="panel">
         <h2>存檔到遊戲</h2>
         <form id="save-form">
