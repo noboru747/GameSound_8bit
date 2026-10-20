@@ -1,24 +1,21 @@
-// 介面主程式：兩種來源（8-bit 合成 / AI 生成）→ 試聽 / 檢測 → 共用的存檔與音效庫。
-// 音效合成用 jsfxr（window.jsfxr，由 index.html 的 <script> 載入）；AI 生成在 ai.mjs。
+// 介面主程式：產生 → 調整 → 試聽 / 檢測 → 存檔到遊戲。
+// 音效合成用 jsfxr（window.jsfxr，由 index.html 的 <script> 載入）。
 
 import {
   BASE, CATEGORIES, GENERATORS, PARAM_GROUPS, STARTER_PACK, WAVE_TYPES, makeParams, serializeParams,
 } from '/presets.mjs';
-import { drawWave, encodeWav, playFloats, toBase64, warnings } from '/audio.mjs';
-import { initAi } from '/ai.mjs';
+import { decode, drawWave, playFloats, warnings } from '/audio.mjs';
 
 const jsfxr = window.jsfxr;
 const $ = (s) => document.querySelector(s);
 const ID_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
-let tab = 'synth';
 let params = makeParams(jsfxr, STARTER_PACK[0].params);
 let wave = null;
 let library = [];
-let ai = null;
 
 // ---------------------------------------------------------------------------
-// 8-bit 合成：合成、試聽、檢測
+// 合成、試聽、檢測
 
 function render() {
   wave = jsfxr.sfxr.toWave(params);
@@ -28,11 +25,9 @@ function render() {
 }
 
 const currentVolume = () => Number($('#save-form').volume.value);
-const playSynth = () => wave && playFloats(Float32Array.from(wave.buffer), params.sample_rate, currentVolume());
-const play = () => (tab === 'ai' ? ai.play() : playSynth());
+const play = () => wave && playFloats(Float32Array.from(wave.buffer), params.sample_rate, currentVolume());
 
 async function playFile(file, volume) {
-  const { decode } = await import('/audio.mjs');
   const buf = await decode(await (await fetch(`/out/${file}?t=${Date.now()}`)).arrayBuffer());
   playFloats(buf.getChannelData(0), buf.sampleRate, volume);
 }
@@ -72,11 +67,11 @@ function normalize() {
     wave = jsfxr.sfxr.toWave(params);
   }
   render();
-  if ($('#autoplay').checked) playSynth();
+  if ($('#autoplay').checked) play();
 }
 
 // ---------------------------------------------------------------------------
-// 8-bit 合成：參數介面
+// 參數介面
 
 const sliderEls = new Map();
 
@@ -100,7 +95,7 @@ function buildSliders() {
         params[key] = Number(input.value);
         render();
       });
-      input.addEventListener('change', () => { if ($('#autoplay').checked) playSynth(); });
+      input.addEventListener('change', () => { if ($('#autoplay').checked) play(); });
       root.appendChild(row);
       sliderEls.set(key, row);
     }
@@ -118,7 +113,7 @@ function syncSliders() {
 
 function changed() {
   render();
-  if ($('#autoplay').checked) playSynth();
+  if ($('#autoplay').checked) play();
 }
 
 function setParams(p) {
@@ -163,28 +158,8 @@ function buildPresets() {
   });
 }
 
-// ---------------------------------------------------------------------------
-// 分頁
-
-function switchTab(name) {
-  tab = name;
-  document.querySelectorAll('.tabs button').forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
-  document.querySelectorAll('[data-pane]').forEach((el) => { el.hidden = el.dataset.pane !== name; });
-  document.querySelector('main').classList.toggle('ai', name === 'ai');
-  if (name === 'ai') ai.activate();
-}
-
-// 目前分頁要存檔的內容
+// 目前要存檔的內容
 function currentSound() {
-  if (tab === 'ai') {
-    const c = ai.current();
-    if (!c) return null;
-    return {
-      durationMs: (c.samples.length / c.sampleRate) * 1000,
-      params: c.source,
-      wavBase64: toBase64(encodeWav(c.samples, c.sampleRate)),
-    };
-  }
   return {
     durationMs: (wave.buffer.length / params.sample_rate) * 1000,
     params: serializeParams(params),
@@ -204,7 +179,6 @@ function buildForm() {
     const id = f.id.value.trim();
     if (!ID_RE.test(id)) return msg('id 只能用小寫英數與 -（例：cast-line）', true);
     const sound = currentSound();
-    if (!sound) return msg('AI 生成：先產生並選用一個候選', true);
     if (library.some((s) => s.id === id) && !confirm(`${id} 已存在，要覆蓋嗎？`)) return;
     try {
       await save({ id, label: f.label.value.trim() || id, category: f.category.value, volume: currentVolume(), ...sound });
@@ -274,13 +248,7 @@ function bindLibrary() {
     if (t.dataset.load) {
       const src = await (await fetch(`/api/source/${s.id}`)).json();
       setMeta(src);
-      if (src.params?.kind === 'ai') {
-        switchTab('ai');
-        ai.load(src.params);
-      } else {
-        switchTab('synth');
-        setParams(src.params);
-      }
+      setParams(src.params);
     }
     if (t.dataset.del && confirm(`刪除 ${s.id}？遊戲裡引用它的地方會變成無聲`)) {
       await fetch(`/api/sound/${s.id}`, { method: 'DELETE' });
@@ -294,13 +262,11 @@ function bindLibrary() {
 async function init() {
   const cfg = await (await fetch('/api/config')).json();
   $('#target').textContent = `專案 ${cfg.project} → 輸出 ${cfg.outDir}`;
-  ai = initAi({ onChange: () => {}, defaultNegative: cfg.defaultNegative });
   buildSliders();
   buildPresets();
   buildForm();
   bindLibrary();
-  document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
-  $('#play').addEventListener('click', playSynth);
+  $('#play').addEventListener('click', play);
   $('#normalize').addEventListener('click', normalize);
   document.addEventListener('keydown', (e) => {
     if (e.code === 'Space' && !['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) {

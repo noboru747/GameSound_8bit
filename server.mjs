@@ -9,26 +9,20 @@
 //   POST   /api/save             { id, label, category, volume, durationMs, params, wavBase64 }
 //   DELETE /api/sound/:id
 //   GET    /out/:file            試聽已存的 wav
-//   GET    /api/ai/status        ComfyUI 與 Stable Audio Open 模型是否就緒
-//   POST   /api/ai/generate      { prompt, negative, seconds, batch, seed, steps, cfg } → 產生的音檔清單
-//   GET    /api/ai/audio?…       轉送 ComfyUI 的音檔（避免瀏覽器跨來源）
 
 import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { readConfig, TOOL_ROOT } from './lib/config.mjs';
-import { createComfy, DEFAULT_NEGATIVE } from './lib/comfy.mjs';
 import { createLibrary } from './lib/library.mjs';
 
 const cfg = readConfig();
 const lib = createLibrary(cfg);
-const comfy = createComfy(cfg.comfyUrl);
 
 const STATIC = {
   '/': ['public/index.html', 'text/html'],
   '/app.mjs': ['public/app.mjs', 'text/javascript'],
   '/audio.mjs': ['public/audio.mjs', 'text/javascript'],
-  '/ai.mjs': ['public/ai.mjs', 'text/javascript'],
   '/style.css': ['public/style.css', 'text/css'],
   '/presets.mjs': ['presets.mjs', 'text/javascript'],
   '/lib/riffwave.js': ['node_modules/jsfxr/riffwave.js', 'text/javascript'],
@@ -55,15 +49,7 @@ const server = http.createServer(async (req, res) => {
       const [file, type] = STATIC[p];
       return send(res, 200, fs.readFileSync(path.join(TOOL_ROOT, file)), type);
     }
-    if (req.method === 'GET' && p === '/api/config') return send(res, 200, { ...cfg, defaultNegative: DEFAULT_NEGATIVE });
-    if (req.method === 'GET' && p === '/api/ai/status') return send(res, 200, await comfy.status());
-    if (req.method === 'POST' && p === '/api/ai/generate') {
-      return send(res, 200, await comfy.generate(JSON.parse(await readBody(req))));
-    }
-    if (req.method === 'GET' && p === '/api/ai/audio') {
-      const { body, type } = await comfy.audio(Object.fromEntries(url.searchParams));
-      return send(res, 200, body, type);
-    }
+    if (req.method === 'GET' && p === '/api/config') return send(res, 200, cfg);
     if (req.method === 'GET' && p === '/api/library') return send(res, 200, lib.list());
     if (req.method === 'GET' && p.startsWith('/api/source/')) {
       const src = lib.source(p.slice('/api/source/'.length));
@@ -92,5 +78,4 @@ server.listen(cfg.port, '127.0.0.1', () => {
   console.log(`GameSound 8bit  http://localhost:${cfg.port}`);
   console.log(`  專案     ${cfg.project}  (參數原始檔：${cfg.projectDir})`);
   console.log(`  輸出     ${cfg.outDir}`);
-  console.log(`  ComfyUI  ${cfg.comfyUrl}（AI 生成用，可不開）`);
 });
